@@ -1,23 +1,42 @@
 import zmq
 import os
+from Camera import Camera
 from dotenv import load_dotenv
+import time
 
-load_dotenv()
-
-SERVER_IP = os.getenv('SERVER_IP', 'localhost')
+load_dotenv() 
+SERVER_IP = os.getenv('SERVER_IP')
 SERVER_PORT = os.getenv('SERVER_PORT', '5555')
 
-context = zmq.Context()
+if not SERVER_IP:
+    raise ValueError("SERVER_IP not set in .env file")
 
-print(f"Connecting to server at {SERVER_IP}:{SERVER_PORT}…")
-socket = context.socket(zmq.REQ)
-socket.connect(f"tcp://{SERVER_IP}:{SERVER_PORT}")
+def main():
+    camera = Camera(jpeg_quality=70)
+    camera.set_config(640, 480)
+    camera.start()
+    print(f"Camera initialized.")
 
-#  Do 10 requests, waiting each time for a response
-for request in range(10):
-    print(f"Sending request {request} …")
-    socket.send(b"Hello")
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)
+    socket.connect(f"tcp://{SERVER_IP}:{SERVER_PORT}")
+    print(f"Connected to {SERVER_IP}:{SERVER_PORT}")
 
-    #  Get the reply.
-    message = socket.recv()
-    print(f"Received reply {request} [ {message} ]")
+    try:
+        while True:
+            buffer = camera.capture_and_encode()
+            start_time = time.time()
+            socket.send(buffer)
+            message = socket.recv_json()
+            end_time = time.time()
+            response_time = end_time - start_time
+            print(f"Received Command: {message}")
+            print(f"Response time: {response_time:.3f} seconds")
+    except KeyboardInterrupt:
+        print("\nStopping...")
+    finally:
+        camera.clean_up()
+        socket.close()
+
+if __name__ == "__main__":
+    main()
