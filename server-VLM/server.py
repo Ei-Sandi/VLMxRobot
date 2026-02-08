@@ -4,7 +4,6 @@ import numpy as np
 from config import PORT, DEFAULT_COMMAND, STOP_COMMAND, MODEL_NAME, OLLAMA_URL, SYSTEM_PROMPT
 from ollama_client import OllamaClient
 
-
 def main():
     context = zmq.Context()
     socket = context.socket(zmq.REP)
@@ -16,7 +15,7 @@ def main():
     print("Press 'q' in the video window to stop.")
 
     try:
-        while True:
+        while True:    
             try:
                 buffer = socket.recv()
                 nparr = np.frombuffer(buffer, np.uint8)
@@ -29,7 +28,6 @@ def main():
                     command = STOP_COMMAND
                 else: 
                     cv2.imshow("PiCar-X VLM Stream", frame)
-
                     try:
                         result = ollama.analyze_frame(frame)
                         print(result)
