@@ -14,6 +14,9 @@ class Camera():
     
     def start(self):
         self.camera.start()
+
+    def capture_array(self):
+        return self.camera.capture_array()
     
     def capture_and_encode(self):
         image = self.camera.capture_array()
