@@ -18,9 +18,7 @@ def main():
     print(f"Camera initialized.")
     
     print("Warming up camera...")
-    for i in range(5):
-        _ = camera.capture_array()
-        time.sleep(0.1)
+    time.sleep(5)
     print("Camera ready!")
 
     context = zmq.Context()

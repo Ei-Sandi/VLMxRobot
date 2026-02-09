@@ -28,6 +28,11 @@ def main():
                     command = STOP_COMMAND
                 else: 
                     cv2.imshow("PiCar-X VLM Stream", frame)
+                    
+                    key = cv2.waitKey(1) & 0xFF
+                    if key == ord('q'):
+                        break
+                    
                     try:
                         result = ollama.analyze_frame(frame)
                         print(result)
@@ -35,9 +40,6 @@ def main():
                         print(f"Error analyzing frame: {e}")
                     
                 socket.send_json(command)
-
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
                     
             except zmq.ZMQError as e:
                 print(f"ZMQ Error: {e}")
