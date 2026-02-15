@@ -11,6 +11,7 @@ This server receives JPEG-encoded images from the Raspberry Pi client via ZeroMQ
 - **Multiple VLM Providers**: Choose between Google Gemini or local Ollama
 - **Factory Pattern**: Easy switching between providers via configuration
 - **Modular Architecture**: Abstracted VLM interface with provider-specific implementations
+- **Test Scripts**: Standalone scripts to test each provider with static images
 
 ## Requirements
 
@@ -66,6 +67,35 @@ The server will:
 **Controls:**
 - Press `q` in the video window to stop the server
 - Press `Ctrl+C` in the terminal to shut down
+
+### Test VLM Providers
+
+Test each provider with a static image without needing the client:
+
+```bash
+# Test Ollama
+python test/test_ollama.py path/to/image.jpg
+
+# Test Gemini
+python test/test_gemini.py path/to/image.jpg
+```
+
+## Project Structure
+
+```
+server-VLM/
+├── server.py              # Main server application
+├── config.py              # Configuration (ports, models, prompts)
+├── vlm.py                 # Abstract VLM base class with factory
+├── gemini_client.py       # Gemini VLM implementation
+├── ollama_client.py       # Ollama VLM implementation
+├── .env-example           # Environment variables template
+├── requirements.txt       # Python dependencies
+├── test/
+│   ├── test_gemini.py    # Test script for Gemini
+│   └── test_ollama.py    # Test script for Ollama
+└── README.md
+```
 
 ## Architecture
 
