@@ -11,9 +11,13 @@ STOP_COMMAND = {
     "speed": 0
 }
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
+# VLM Provider Configuration
+VLM_PROVIDER = "gemini"  # "ollama" or "gemini"
 
-MODEL_NAME = "llava:7b"
+GEMINI_MODEL_NAME = "gemini-robotics-er-1.5-preview"
+
+OLLAMA_URL = "http://localhost:11434/api/generate"
+OLLAMA_MODEL_NAME = "gemma3:4b-it-qat"
 
 SYSTEM_PROMPT = """
 You are the visual navigation system for a small robot car (PiCar-X).

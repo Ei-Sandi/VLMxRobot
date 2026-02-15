@@ -3,12 +3,12 @@ import base64
 import requests
 from typing import Dict, Any
 import numpy as np
+from vlm import VLM
 
-class OllamaClient:
+class OllamaClient(VLM):
     def __init__(self, model_name: str, ollama_url: str, system_prompt: str):
-        self.model_name = model_name
+        super().__init__(model_name, system_prompt)
         self.ollama_url = ollama_url
-        self.system_prompt = system_prompt
     
     def analyze_frame(self, frame: np.ndarray, temperature: float = 0.1) -> Dict[str, Any]:
         _, buffer_jpg = cv2.imencode('.jpg', frame)
