@@ -1,6 +1,7 @@
 import zmq
 import os
 from camera import Camera
+from speaker import Speaker
 from dotenv import load_dotenv
 import time
 
@@ -22,6 +23,8 @@ def main():
         _ = camera.capture_array()
         time.sleep(0.1)
     print("Camera ready!")
+    
+    speaker = Speaker()
 
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
@@ -38,6 +41,10 @@ def main():
                 socket.send(buffer)
                 message = socket.recv_json()
                 end_time = time.time()
+                
+                if 'reasoning' in message:
+                    speaker.speak(message['reasoning'])
+                    
                 response_time = end_time - start_time
                 print(f"Received Command: {message}")
                 print(f"Response time: {response_time:.3f} seconds")
