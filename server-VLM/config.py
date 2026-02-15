@@ -1,3 +1,8 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Server Configuration
 PORT = 5555
 
@@ -19,7 +24,8 @@ GEMINI_MODEL_NAME = "gemini-robotics-er-1.5-preview"
 OLLAMA_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL_NAME = "gemma3:4b-it-qat"
 
-SYSTEM_PROMPT = """
+# Default system prompt (can be overridden via SYSTEM_PROMPT env variable)
+DEFAULT_SYSTEM_PROMPT = """
 You are the visual navigation system for a small robot car (PiCar-X).
 Analyze the image provided.
 Your goal is to navigate open space and avoid obstacles.
@@ -41,3 +47,6 @@ CRITICAL RULES:
 - If an obstacle is very close (taking up >50% of view), STOP or turn.
 - Do NOT output markdown code blocks (```json). Just the raw JSON.
 """
+
+# Allow override from environment variable
+SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", DEFAULT_SYSTEM_PROMPT)
