@@ -45,4 +45,9 @@ class GeminiClient(VLM):
         
         response_text = self.generate_content(image=image_part, temperature=temperature)
         
-        return {"response": response_text}
+        try:
+            result = json.loads(response_text)
+            return result
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {response_text}")
+            raise ValueError(f"Invalid JSON response from model: {e}")

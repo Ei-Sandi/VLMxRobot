@@ -32,7 +32,8 @@ def test_gemini(image_path: str):
     result = gemini.analyze_frame(frame)
     
     print("\nResult:")
-    print(result)
+    print(f"Reasoning: {result.get('reasoning', 'N/A')}")
+    print(f"Command: {result.get('command', 'N/A')}")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

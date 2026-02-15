@@ -3,7 +3,7 @@ import cv2
 import zmq
 import numpy as np
 from dotenv import load_dotenv
-from config import PORT, DEFAULT_COMMAND, STOP_COMMAND, OLLAMA_MODEL_NAME, OLLAMA_URL, GEMINI_MODEL_NAME, SYSTEM_PROMPT, VLM_PROVIDER
+from config import PORT, STOP_COMMAND, OLLAMA_MODEL_NAME, OLLAMA_URL, GEMINI_MODEL_NAME, SYSTEM_PROMPT, VLM_PROVIDER
 from vlm import VLM
 
 def main():
@@ -30,11 +30,13 @@ def main():
             nparr = np.frombuffer(buffer, np.uint8)
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-            command = DEFAULT_COMMAND
+            response = {
+                "reasoning": "Frame not received",
+                "command": STOP_COMMAND
+            }
             
             if frame is None:
                 print("Frame not received! Stopping robot.")
-                command = STOP_COMMAND
             else: 
                 cv2.imshow("PiCar-X VLM Stream", frame)
                 
@@ -45,10 +47,15 @@ def main():
                 try:
                     result = vlm.analyze_frame(frame)
                     print(result)
+                    response = result
                 except Exception as e:
                     print(f"Error analyzing frame: {e}")
+                    response = {
+                        "reasoning": f"Error: {str(e)}",
+                        "command": STOP_COMMAND
+                    }
             
-            socket.send_json(command)
+            socket.send_json(response)
                 
     except KeyboardInterrupt:
         print("\nShutting down server...")

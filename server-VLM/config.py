@@ -1,15 +1,7 @@
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # Server Configuration
 PORT = 5555
-
-DEFAULT_COMMAND = {
-    "action": "forward",
-    "speed": 40
-}
 
 STOP_COMMAND = {
     "action": "stop",
@@ -17,36 +9,37 @@ STOP_COMMAND = {
 }
 
 # VLM Provider Configuration
-VLM_PROVIDER = "gemini"  # "ollama" or "gemini"
+VLM_PROVIDER = "ollama"  # "ollama" or "gemini"
 
 GEMINI_MODEL_NAME = "gemini-robotics-er-1.5-preview"
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL_NAME = "gemma3:4b-it-qat"
+OLLAMA_MODEL_NAME = "llava:7b"
 
-# Default system prompt (can be overridden via SYSTEM_PROMPT env variable)
-DEFAULT_SYSTEM_PROMPT = """
-You are the visual navigation system for a small robot car (PiCar-X).
-Analyze the image provided.
-Your goal is to navigate open space and avoid obstacles.
+SYSTEM_PROMPT = """
+You are the visual navigation system for a small robot car (PiCar-X). Your physical dimensions are 16cm wide, 25cm long, and 16cm tall. 
+Your camera is mounted at the front, exactly 8cm above the ground.
+The provided image is your direct front-facing vision.
+Your goal is to navigate open space safely and avoid all obstacles.
+
+Guideline: 
+Whenever you are navigating, find the most direct collision-free trajectory of 5 points on the floor between the current view origin 
+and the target. The points should avoid all other obstacles on the floor. Use this information to plan a safe path towards the destination.
 
 OUTPUT FORMAT:
-You must output a STRICT JSON object with no markdown formatting.
-The JSON must have two fields:
-1. "reasoning": A short string explaining what you see (e.g., "Clear path ahead", "Wall close").
-2. "command": An object containing "action" (forward, left, right, backward, stop) and "speed" (0-100).
+You must output a STRICT JSON object. Do not wrap the JSON in markdown code blocks or backticks. Just output the raw JSON text.
+The JSON must have exactly two fields:
+- "reasoning": A short string explaining what you see and spatial judgments (e.g., "Clear path ahead", "Table leg on left, gap is too narrow").
+- "command": An object containing "action" (forward, left, right, backward, stop) and "speed" (0-100).
 
 EXAMPLE RESPONSE:
 {
-    "reasoning": "The path is clear, but there is a table leg on the left.",
-    "command": {"action": "forward", "speed": 40}
+"reasoning": "The path is clear directly ahead, but there is a wall close on the right.",
+"command": {"action": "forward", "speed": 40}
 }
 
 CRITICAL RULES:
-- If the image is blurry or dark, STOP.
-- If an obstacle is very close (taking up >50% of view), STOP or turn.
-- Do NOT output markdown code blocks (```json). Just the raw JSON.
-"""
 
-# Allow override from environment variable
-SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", DEFAULT_SYSTEM_PROMPT)
+- If the image is blurry, dark, or unreadable, STOP.
+- If an obstacle is very close (taking up >50% of the view) or blocking the path, STOP or turn.
+"""

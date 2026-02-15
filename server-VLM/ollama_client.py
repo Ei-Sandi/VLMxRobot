@@ -1,5 +1,6 @@
 import cv2
 import base64
+import json
 import requests
 from typing import Dict, Any
 import numpy as np
@@ -18,6 +19,7 @@ class OllamaClient(VLM):
             "model": self.model_name,
             "prompt": self.system_prompt,
             "stream": False,
+            "format": "json",
             "images": [jpg_as_text],
             "options": {
                 "temperature": temperature
@@ -26,4 +28,24 @@ class OllamaClient(VLM):
         
         response = requests.post(self.ollama_url, json=payload)
         response.raise_for_status()
-        return response.json()
+        
+        ollama_response = response.json()
+        response_text = ollama_response.get('response', '')
+        
+        try:
+            result = json.loads(response_text)
+            
+            if 'reasoning' in result and 'command' in result:
+                return result
+            elif 'action' in result and 'speed' in result:
+                action = result.get('action', 'unknown')
+                return {
+                    "reasoning": f"Moving {action}.",
+                    "command": result
+                }
+            else:
+                raise ValueError(f"Unexpected response structure: {result}")
+                
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON response: {response_text}")
+            raise ValueError(f"Invalid JSON response from model: {e}")
