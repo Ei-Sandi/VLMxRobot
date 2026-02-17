@@ -15,22 +15,10 @@ def turn_right(car):
     car.stop()
     car.set_dir_servo_angle(0)
 
+# Dummy scan function to add in actions_dict keys
+# Real logic is overridden in client.py
 def scan(car):
-    tilt_angles = [30, 0, -30]
-    pan_start = -45
-    pan_end = 45
-    step = 10  # Speed of scan (higher = faster)
-
-    for tilt in tilt_angles:
-        car.set_cam_tilt_angle(tilt)
-        
-        for pan in range(pan_start, pan_end + 1, step):
-            car.set_cam_pan_angle(pan)
-            time.sleep(0.05)        
-        time.sleep(0.1) 
-        
-    car.set_cam_tilt_angle(0)
-    car.set_cam_pan_angle(0)
+    pass
 
 actions_dict.clear()
 actions_dict["forward"] = forward

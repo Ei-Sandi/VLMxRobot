@@ -1,8 +1,11 @@
 import zmq
 import os
+import cv2
+import numpy as np
 from camera import Camera
 from speaker import Speaker
 from picarx.preset_actions import Picarx, ActionFlow
+from panorama import PanoramaScanner
 from dotenv import load_dotenv
 import time
 
@@ -38,6 +41,15 @@ def main():
     socket.connect(f"tcp://{SERVER_IP}:{SERVER_PORT}")
     print(f"Connected to {SERVER_IP}:{SERVER_PORT}")
 
+    scanner = PanoramaScanner(px, camera)
+    
+    encoded_grid = scanner.scan()
+    if encoded_grid:
+        socket.send_multipart(encoded_grid)
+        ack = socket.recv_json()
+        if 'reasoning' in ack:
+            speaker.speak(ack['reasoning'])
+
     try:
         while True:
             try:
@@ -49,12 +61,25 @@ def main():
                 message = socket.recv_json()
                 end_time = time.time()
                 
-                if 'reasoning' in message:
-                    speaker.speak(message['reasoning'])
+                command = message.get('command', '')
+
+                if command == 'scan':
+                    encoded_grid = scanner.scan()
+                    if encoded_grid:
+                        socket.send_multipart(encoded_grid)
+                        message = socket.recv_json()
+                    else:
+                        message = {} 
                     
-                flow.add_action(message['command'])
-                flow.wait_actions_done()
-                print(f"Received Command: {message}")
+                    command = '' 
+                
+                if message and 'reasoning' in message:
+                    speaker.speak(message['reasoning'])
+
+                if command:
+                    flow.add_action(command)
+                    flow.wait_actions_done()
+                    print(f"Executed Command: {command}")
 
                 response_time = end_time - start_time
                 print(f"Response time: {response_time:.3f} seconds")
