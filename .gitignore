@@ -1,4 +1,5 @@
 .env
+picarx/
 
 __pycache__
 venv/

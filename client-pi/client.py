@@ -2,6 +2,7 @@ import zmq
 import os
 from camera import Camera
 from speaker import Speaker
+from picarx.preset_actions import Picarx, ActionFlow
 from dotenv import load_dotenv
 import time
 
@@ -26,6 +27,10 @@ def main():
     
     speaker = Speaker()
 
+    px = Picarx()
+    flow = ActionFlow(px)
+    flow.start()
+
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.RCVTIMEO, 900000) 
@@ -38,21 +43,32 @@ def main():
             try:
                 buffer = camera.capture_and_encode()
                 start_time = time.time()
+
                 socket.send(buffer)
+                
                 message = socket.recv_json()
                 end_time = time.time()
                 
                 if 'reasoning' in message:
                     speaker.speak(message['reasoning'])
                     
-                response_time = end_time - start_time
+                flow.add_action(message['command'])
+                flow.wait_actions_done()
                 print(f"Received Command: {message}")
+
+                response_time = end_time - start_time
                 print(f"Response time: {response_time:.3f} seconds")
+            
+            except zmq.Again:
+                print("Server timeout...")
+                continue
+
             except KeyboardInterrupt:
                 print("\nStopping...")
                 break
     finally:
         camera.clean_up()
+        flow.stop()
         socket.close()
 
 if __name__ == "__main__":
