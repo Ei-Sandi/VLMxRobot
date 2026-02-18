@@ -28,7 +28,9 @@ def main():
         time.sleep(0.1)
     print("Camera ready!")
     
-    speaker = Speaker()
+    # Try device 3 (speaker) or 6 (robothat) or 7 (default)
+    device = 3 
+    speaker = Speaker(device=device)
 
     px = Picarx()
     flow = ActionFlow(px)
