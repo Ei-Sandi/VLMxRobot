@@ -18,7 +18,7 @@ if not SERVER_IP:
 
 def main():
     camera = Camera(jpeg_quality=70)
-    camera.set_config(640, 480)
+    camera.set_config(1920, 1080)
     camera.start()
     print(f"Camera initialized.")
     
@@ -28,9 +28,7 @@ def main():
         time.sleep(0.1)
     print("Camera ready!")
     
-    # Try device 3 (speaker) or 6 (robothat) or 7 (default)
-    device = 3 
-    speaker = Speaker(device=device)
+    speaker = Speaker(device=3) # Hardcoded speaker device ID 
 
     px = Picarx()
     flow = ActionFlow(px)

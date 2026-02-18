@@ -7,24 +7,24 @@ class PanoramaScanner:
         self.car = car
         self.camera = camera
         
-        self.tilt_angles = [30, 0, -30] 
+        self.tilt_angles = [0, -30] 
         self.pan_angles = [-40, 0, 40]
         self.quality = 70
 
     def capture_grid(self):
         """
-        Internal method to capture the 3x3 grid.
+        Internal method to capture the 2x3 grid.
         Returns a list of numpy arrays.
         """
         images = []
         
         for tilt in self.tilt_angles:
             self.car.set_cam_tilt_angle(tilt)
-            time.sleep(0.5) 
+            time.sleep(1) 
             
             for pan in self.pan_angles:
                 self.car.set_cam_pan_angle(pan)
-                time.sleep(0.5) 
+                time.sleep(1) 
                 
                 frame = self.camera.capture_array()
                 
