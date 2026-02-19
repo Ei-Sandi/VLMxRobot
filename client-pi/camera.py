@@ -16,11 +16,14 @@ class Camera():
         self.camera.start()
 
     def capture_array(self):
-        return self.camera.capture_array()
+        frame = self.camera.capture_array()
+        corrected_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        return corrected_frame
     
     def capture_and_encode(self):
         image = self.camera.capture_array()
-        _, buffer = cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), self.jpeg_quality])
+        corrected_frame = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        _, buffer = cv2.imencode('.jpg', corrected_frame, [int(cv2.IMWRITE_JPEG_QUALITY), self.jpeg_quality])
         return buffer
     
     def clean_up(self):
