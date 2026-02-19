@@ -7,8 +7,8 @@ class PanoramaScanner:
         self.car = car
         self.camera = camera
         
-        self.tilt_angles = [0, -30] 
-        self.pan_angles = [-40, 0, 40]
+        self.tilt_angles = [0, -29] 
+        self.pan_angles = [-42, 0, 42]
         self.quality = 70
 
     def capture_grid(self):

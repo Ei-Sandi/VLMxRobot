@@ -28,7 +28,8 @@ def main():
         time.sleep(0.1)
     print("Camera ready!")
     
-    speaker = Speaker(device=3) # Hardcoded speaker device ID 
+    # Auto-detects the best available audio device (HDMI, Jack, or HAT)
+    speaker = Speaker() 
 
     px = Picarx()
     flow = ActionFlow(px)
