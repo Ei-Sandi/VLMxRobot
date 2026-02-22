@@ -4,8 +4,8 @@ import cv2
 import numpy as np
 from camera import Camera
 from speaker import Speaker
-from picarx.preset_actions import Picarx, ActionFlow
-from panorama import PanoramaScanner
+from picarx.preset_actions import Picarx
+from executor import Executor
 from dotenv import load_dotenv
 import time
 
@@ -28,28 +28,17 @@ def main():
         time.sleep(0.1)
     print("Camera ready!")
     
-    # Auto-detects the best available audio device (HDMI, Jack, or HAT)
     speaker = Speaker() 
 
     px = Picarx()
-    flow = ActionFlow(px)
-    flow.start()
+    executor = Executor(px)
 
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
-    socket.setsockopt(zmq.RCVTIMEO, 900000) 
+    socket.setsockopt(zmq.RCVTIMEO, 300000) 
     socket.setsockopt(zmq.SNDTIMEO, 2000) 
     socket.connect(f"tcp://{SERVER_IP}:{SERVER_PORT}")
     print(f"Connected to {SERVER_IP}:{SERVER_PORT}")
-
-    scanner = PanoramaScanner(px, camera)
-    
-    encoded_grid = scanner.scan()
-    if encoded_grid:
-        socket.send_multipart(encoded_grid)
-        ack = socket.recv_json()
-        if 'reasoning' in ack:
-            speaker.speak(ack['reasoning'])
 
     try:
         while True:
@@ -63,23 +52,12 @@ def main():
                 end_time = time.time()
                 
                 command = message.get('command', '')
-
-                if command == 'scan':
-                    encoded_grid = scanner.scan()
-                    if encoded_grid:
-                        socket.send_multipart(encoded_grid)
-                        message = socket.recv_json()
-                    else:
-                        message = {} 
-                    
-                    command = '' 
                 
                 if message and 'reasoning' in message:
                     speaker.speak(message['reasoning'])
 
                 if command:
-                    flow.add_action(command)
-                    flow.wait_actions_done()
+                    executor.execute(command)
                     print(f"Executed Command: {command}")
 
                 response_time = end_time - start_time
@@ -94,7 +72,6 @@ def main():
                 break
     finally:
         camera.clean_up()
-        flow.stop()
         socket.close()
 
 if __name__ == "__main__":
