@@ -1,4 +1,4 @@
-from picarx.preset_actions import Picarx
+from picarx import Picarx
 from actions import actions_dict
 
 class Executor:
@@ -9,16 +9,20 @@ class Executor:
         name = action_item
         kwargs = {}
 
-        if isinstance(action_item, tuple):
+        if isinstance(action_item, (tuple, list)):
             if len(action_item) == 2 and isinstance(action_item[1], dict):
                 name, kwargs = action_item
         elif isinstance(action_item, str):
             name = action_item
         
-        if not name:
+        if not name or not isinstance(name, str):
+            print(f"Invalid action format: {action_item}")
             return
 
         if name in actions_dict:
-            actions_dict[name](self.car, **kwargs)
+            try:
+                actions_dict[name](self.car, **kwargs)
+            except Exception as e:
+                print(f"Error executing action {name}: {e}")
         else:
-            print(f"Action {name} not found")
+            print(f"Action {name} not found, available actions: {list(actions_dict.keys())}")

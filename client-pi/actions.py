@@ -1,5 +1,5 @@
 import time
-from picarx.preset_actions import Picarx
+from picarx import Picarx
 
 class Actions:
     @staticmethod

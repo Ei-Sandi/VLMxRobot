@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from camera import Camera
 from speaker import Speaker
-from picarx.preset_actions import Picarx
+from picarx import Picarx
 from executor import Executor
 from dotenv import load_dotenv
 import time
