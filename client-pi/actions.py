@@ -16,9 +16,15 @@ class Actions:
         car.backward(speed)
         time.sleep(duration)
         car.stop()
-        car.set_dir_servo_angle(0) 
+        car.set_dir_servo_angle(0)
+    
+    @staticmethod
+    def stop(car, speed=0, angle=0, duration=0):
+        car.stop()
+        car.set_dir_servo_angle(0)
 
 actions_dict = {
     "forward": Actions.move_forward,
-    "backward": Actions.move_backward
+    "backward": Actions.move_backward,
+    "stop": Actions.stop
 }

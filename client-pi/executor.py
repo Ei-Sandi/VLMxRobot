@@ -5,24 +5,25 @@ class Executor:
     def __init__(self, car: Picarx) -> None:
         self.car = car
 
-    def execute(self, action_item) -> None:
-        name = action_item
-        kwargs = {}
-
-        if isinstance(action_item, (tuple, list)):
-            if len(action_item) == 2 and isinstance(action_item[1], dict):
-                name, kwargs = action_item
-        elif isinstance(action_item, str):
-            name = action_item
-        
-        if not name or not isinstance(name, str):
-            print(f"Invalid action format: {action_item}")
+    def execute(self, action_item: dict) -> None:
+        """
+        Executes a command from the VLM.
+        Expected format: { "action": "forward", "speed": 30, "angle": 0, "duration": 1.0 }
+        """
+        if not action_item or not isinstance(action_item, dict):
+            print(f"Invalid action format (expected dict): {action_item}")
             return
 
-        if name in actions_dict:
+        name = action_item.get("action")
+        # Extract all other keys as arguments (speed, angle, duration)
+        kwargs = {k: v for k, v in action_item.items() if k != "action"}
+
+        if name in actions_dict: 
+            print(f"Executing: {name} with {kwargs}")
             try:
+                # Calls the function from actions.py with the arguments
                 actions_dict[name](self.car, **kwargs)
             except Exception as e:
                 print(f"Error executing action {name}: {e}")
         else:
-            print(f"Action {name} not found, available actions: {list(actions_dict.keys())}")
+            print(f"Action '{name}' not found. Available: {list(actions_dict.keys())}")
