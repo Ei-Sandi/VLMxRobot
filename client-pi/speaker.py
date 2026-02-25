@@ -23,6 +23,14 @@ class Speaker:
         self.voice = PiperVoice.load(model_path)
         print("Voice model loaded successfully.")
 
+        try:
+            from gpiozero import OutputDevice
+            self.amp = OutputDevice(20) 
+            self.amp.on()
+            print("SunFounder amplifier enabled (GPIO 20 is HIGH).")
+        except Exception as e:
+            print(f"Note: Could not toggle GPIO 20 amp pin: {e}")
+
     def _find_device_index(self, name_hint):
         """Finds the audio device index by name."""
         try:
@@ -61,15 +69,20 @@ class Speaker:
         audio_buffer.seek(0)
         
         with wave.open(audio_buffer, 'rb') as wav_file:
+            channels = wav_file.getnchannels() 
             raw_frames = wav_file.readframes(wav_file.getnframes())
-            audio_data = np.frombuffer(raw_frames, dtype=np.int16)
+            
+        audio_data = np.frombuffer(raw_frames, dtype=np.int16)
+        audio_data = audio_data.reshape(-1, channels) 
             
         try:
-            with sd.OutputStream(samplerate=self.voice.config.sample_rate, 
-                               channels=1, 
-                               dtype='int16', 
-                               device=self.device) as stream:
-                 stream.write(audio_data)
+            with sd.OutputStream(
+                samplerate=self.voice.config.sample_rate, 
+                device=self.device, 
+                channels=channels, 
+                dtype='int16'
+            ) as stream:
+                stream.write(audio_data)
         except Exception as e:
             print(f"Error playing audio: {e}")
-            print("Try specifying the correct output device.")  
+            print("Try specifying the correct output device or check if volume is muted (alsamixer).")
