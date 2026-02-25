@@ -11,18 +11,21 @@ class GeminiClient(VLM):
         super().__init__(model_name, system_prompt)
         self.client = genai.Client(api_key=google_api_key)
 
-    def _create_config(self, temperature: float = 0.5) -> types.GenerateContentConfig:
+    def _create_config(self, temperature: float = 0.7) -> types.GenerateContentConfig:
         """Create a generation config with the specified temperature."""
         return types.GenerateContentConfig(
             temperature=temperature,
             thinking_config=types.ThinkingConfig(thinking_budget=0)
         )
 
-    def generate_content(self, image=None, temperature: float = 0.5):
+    def generate_content(self, image=None, temperature: float = 0.7, prompt: str = ""):
         """Generate content using the Gemini model with optional image input."""
         config = self._create_config(temperature)
 
         contents = [self.system_prompt]
+        if prompt:
+            contents.append(f"\nUser Instruction: {prompt}")
+            
         if image is not None:
             contents.insert(0, image)
 
@@ -34,7 +37,7 @@ class GeminiClient(VLM):
 
         return image_response.text
 
-    def analyze_frame(self, frame: np.ndarray, temperature: float = 0.5) -> Dict[str, Any]:
+    def analyze_frame(self, frame: np.ndarray, prompt: str, temperature: float = 0.7) -> Dict[str, Any]:
         """Analyze a frame using Gemini vision model."""
         _, buffer_jpg = cv2.imencode('.jpg', frame)
         
@@ -43,7 +46,7 @@ class GeminiClient(VLM):
             mime_type="image/jpeg"
         )
         
-        response_text = self.generate_content(image=image_part, temperature=temperature)
+        response_text = self.generate_content(image=image_part, temperature=temperature, prompt=prompt)
         
         try:
             result = json.loads(response_text)

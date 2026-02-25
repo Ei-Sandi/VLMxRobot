@@ -11,13 +11,15 @@ class OllamaClient(VLM):
         super().__init__(model_name, system_prompt)
         self.ollama_url = ollama_url
     
-    def analyze_frame(self, frame: np.ndarray, temperature: float = 0.1) -> Dict[str, Any]:
+    def analyze_frame(self, frame: np.ndarray, prompt: str, temperature: float = 0.7) -> Dict[str, Any]:
         _, buffer_jpg = cv2.imencode('.jpg', frame)
         jpg_as_text = base64.b64encode(buffer_jpg).decode('utf-8')
         
+        full_prompt = f"{self.system_prompt}\nUser Instruction: {prompt}"
+        
         payload = {
             "model": self.model_name,
-            "prompt": self.system_prompt,
+            "prompt": full_prompt,
             "stream": False,
             "format": "json",
             "images": [jpg_as_text],
@@ -31,7 +33,7 @@ class OllamaClient(VLM):
         
         ollama_response = response.json()
         response_text = ollama_response.get('response', '')
-        
+
         try:
             result = json.loads(response_text)
             

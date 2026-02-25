@@ -26,12 +26,16 @@ def main():
 
     try:
         while True:
-            buffer = socket.recv()
+            parts = socket.recv_multipart()
+            prompt_bytes, buffer = parts
+            prompt = prompt_bytes.decode('utf-8')
+
             nparr = np.frombuffer(buffer, np.uint8)
             frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
             response = {
                 "reasoning": "Frame not received",
+                "status": "completed",
                 "command": STOP_COMMAND
             }
             
@@ -45,13 +49,14 @@ def main():
                     break
                 
                 try:
-                    result = vlm.analyze_frame(frame)
+                    result = vlm.analyze_frame(frame, prompt=prompt)
                     print(result)
                     response = result
                 except Exception as e:
                     print(f"Error analyzing frame: {e}")
                     response = {
                         "reasoning": f"Error: {str(e)}",
+                        "status": "completed",
                         "command": STOP_COMMAND
                     }
             

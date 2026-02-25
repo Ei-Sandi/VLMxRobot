@@ -11,7 +11,7 @@ class VLM(ABC):
         self.system_prompt = system_prompt
     
     @abstractmethod
-    def analyze_frame(self, frame: np.ndarray, temperature: float = 0.5) -> Dict[str, Any]:
+    def analyze_frame(self, frame: np.ndarray, prompt: str, temperature: float = 0.7) -> Dict[str, Any]:
         """Analyze a frame and return results."""
         pass
     
