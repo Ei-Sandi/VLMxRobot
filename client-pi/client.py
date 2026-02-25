@@ -49,8 +49,6 @@ def main():
                     
                 if prompt.lower() in ["bye", "exit"]:
                     break
-
-                speaker.speak(prompt)
                 
                 while True:
                     buffer = camera.capture_and_encode()
