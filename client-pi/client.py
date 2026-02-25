@@ -43,25 +43,39 @@ def main():
     try:
         while True:
             try:
-                buffer = camera.capture_and_encode()
-                start_time = time.time()
+                prompt = input("Enter instruction: ") 
 
-                socket.send(buffer)
+                speaker.speak(prompt)
+                    
+                if prompt.lower() in ["bye", "exit"]:
+                    break
                 
-                message = socket.recv_json()
-                end_time = time.time()
-                
-                command = message.get('command', '')
-                
-                if message and 'reasoning' in message:
-                    speaker.speak(message['reasoning'])
+                while True:
+                    buffer = camera.capture_and_encode()
+                    start_time = time.time()
+                    
+                    socket.send_string(prompt, flags=zmq.SNDMORE)
+                    socket.send(buffer)
+                    
+                    message = socket.recv_json()
+                    end_time = time.time()
+                    
+                    command = message.get('command', '')
+                    reasoning = message.get('reasoning', '')
+                    status = message.get('status', 'running')
 
-                if command:
-                    executor.execute(command)
-                    print(f"Executed Command: {command}")
+                    if reasoning:
+                        speaker.speak(reasoning)
+                    
+                    if status == "completed":
+                        break
+                        
+                    if command:
+                        executor.execute(command)
+                        print(f"Executed Command: {command}")
 
-                response_time = end_time - start_time
-                print(f"Response time: {response_time:.3f} seconds")
+                    response_time = end_time - start_time
+                    print(f"Response time: {response_time:.3f} seconds")
             
             except zmq.Again:
                 print("Server timeout...")
