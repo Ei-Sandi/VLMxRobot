@@ -29,9 +29,8 @@ def main():
     print("Camera ready!")
     
     speaker = Speaker() 
-
     px = Picarx()
-    executor = Executor(px)
+    executor = Executor(px, speaker)
 
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
@@ -56,6 +55,7 @@ def main():
                     
                     socket.send_string(prompt, flags=zmq.SNDMORE)
                     socket.send(buffer)
+                    prompt = ""
                     
                     message = socket.recv_json()
                     end_time = time.time()
@@ -68,11 +68,51 @@ def main():
                         speaker.speak(reasoning)
                     
                     if status == "completed":
+                        speaker.speak("Task completed. What should I do next?")
                         break
-                        
+
+                    command_result = None
                     if command:
-                        executor.execute(command)
+                        command_result = executor.execute(command) 
                         print(f"Executed Command: {command}")
+
+                        if isinstance(command, dict) and command.get("action") == "ask":
+                            prompt = input("Answer: ") 
+                            continue
+
+                        if command_result == "capture":
+                             # We use a loop here to handle chained look commands (Look Left -> Look Right -> Look Up...)
+                            while command_result == "capture":
+                                buffer = camera.capture_and_encode()
+                                 
+                                socket.send_string("", flags=zmq.SNDMORE) 
+                                socket.send(buffer)
+                                 
+                                message = socket.recv_json() 
+                                 
+                                px.cam_pan_servo_calibrate(0)
+                                px.cam_tilt_servo_calibrate(0)
+
+                                command = message.get('command', '')
+                                reasoning = message.get('reasoning', '')
+                                status = message.get('status', 'running')
+
+                                if reasoning:
+                                    speaker.speak(reasoning)
+                                 
+                                if status == "completed":
+                                    command_result = None 
+                                    speaker.speak("Task completed. What should I do next?")
+                                    break
+                                     
+                                if command:
+                                    command_result = executor.execute(command)
+                                    print(f"Executed Chained Command: {command}")
+                                     
+                                    if isinstance(command, dict) and command.get("action") == "ask":
+                                        prompt = input("Answer: ")
+                                else:
+                                    command_result = None
 
                     response_time = end_time - start_time
                     print(f"Response time: {response_time:.3f} seconds")
