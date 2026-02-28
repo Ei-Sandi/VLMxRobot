@@ -1,24 +1,24 @@
 # Server-VLM
 
-ZeroMQ server for receiving camera frames from Raspberry Pi client and processing them with Vision Language Models (Gemini or Ollama).
+ZeroMQ server for receiving camera frames from Raspberry Pi client and processing them with Vision Language Models (Gemini or Ollama) using a unified OpenAI-compatible interface.
 
 ## Overview
 
-This server receives JPEG-encoded images from the Raspberry Pi client via ZeroMQ, processes them with a Vision Language Model, displays the frames in a video stream window, and sends back robot control commands.
+This server acts as the brain of the robot. It receives JPEG-encoded images from the Raspberry Pi client via ZeroMQ, processes them with a Vision Language Model (VLM), displays the frames in a video stream window, and sends back robot control commands (movement, camera, speech).
 
 ## Features
 
-- **Multiple VLM Providers**: Choose between Google Gemini or local Ollama
-- **Factory Pattern**: Easy switching between providers via configuration
-- **Modular Architecture**: Abstracted VLM interface with provider-specific implementations
-- **Test Scripts**: Standalone scripts to test each provider with static images
+- **Unified VLM Interface**: Uses the `openai` python library to connect to any OpenAI-compatible VLM provider (Ollama, Gemini, etc.).
+- **ZeroMQ Streaming**: Low-latency image streaming and command response.
+- **Configurable Control**: Easy switching between models via environment variables.
+- **Manual Testing**: Script to test VLM responses with static images.
 
 ## Requirements
 
 - Python 3.8+
 - Network connectivity with the Raspberry Pi client
 - For Gemini: Google API key
-- For Ollama: Local Ollama installation
+- For Ollama: Local Ollama installation running (usually on port 11434)
 
 ## Installation
 
@@ -29,25 +29,26 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-2. Set up environment variables by creating a `.env` file:
+2. Set up environment variables by copying the example:
 ```bash
 cp .env-example .env
 ```
 
-3. Configure your `.env` file:
-```env
-# Optional: Override VLM provider (default is in config.py)
-# VLM_PROVIDER=gemini
+3. Configure your `.env` file for your chosen provider:
 
-# Required for Gemini provider
-GOOGLE_API_KEY=your_key_here
-```
+   **Option A: Gemini (Default)**
+   ```env
+   VLM_API_KEY="your-google-api-key-here"
+   VLM_BASE_URL="https://generativelanguage.googleapis.com/v1beta/openai/"
+   VLM_MODEL_NAME="gemini-1.5-flash"
+   ```
 
-4. Configure server settings in `config.py`:
-   - `VLM_PROVIDER`: Default provider ("ollama" or "gemini")
-   - `PORT`: Server listening port (default: 5555)
-   - `SYSTEM_PROMPT`: Instructions for the VLM
-   - Model names and URLs
+   **Option B: Ollama (Local)**
+   ```env
+   VLM_API_KEY="ollama"
+   VLM_BASE_URL="http://localhost:11434/v1"
+   VLM_MODEL_NAME="llava:7b"
+   ```
 
 ## Usage
 
@@ -58,88 +59,53 @@ python server.py
 ```
 
 The server will:
-- Use the VLM provider specified in config or .env
-- Listen on port 5555 (configurable)
-- Display incoming frames in "PiCar-X VLM Stream" window
-- Analyze frames with the VLM
-- Send control commands back to the client
+- Initialize the VLM client based on your `.env` configuration.
+- Listen on port 5555 (default).
+- Display incoming frames in "PiCar-X VLM Stream" window.
+- Analyze frames and send JSON commands back to the robot.
 
 **Controls:**
-- Press `q` in the video window to stop the server
-- Press `Ctrl+C` in the terminal to shut down
+- Press `q` in the video window to stop the server.
+- Press `Ctrl+C` in the terminal to force shut down.
 
-### Test VLM Providers
+### Test VLM Manually
 
-Test each provider with a static image without needing the client:
+You can test the VLM\s response to a static image without running the full robot loop:
 
 ```bash
-# Test Ollama
-python test/test_ollama.py path/to/image.jpg
+# Basic usage (defaults to generic prompt)
+./venv/bin/python3 test/test_vlm.py path/to/image.jpg
 
-# Test Gemini
-python test/test_gemini.py path/to/image.jpg
+# Custom prompt
+./venv/bin/python3 test/test_vlm.py path/to/image.jpg "Is there a clear path forward?"
 ```
 
 ## Project Structure
 
 ```
 server-VLM/
-├── server.py              # Main server application
-├── config.py              # Configuration (ports, models, prompts)
-├── vlm.py                 # Abstract VLM base class with factory
-├── gemini_client.py       # Gemini VLM implementation
-├── ollama_client.py       # Ollama VLM implementation
+├── server.py              # Main ZeroMQ server application
+├── config.py              # Configuration loading and System Prompt
+├── vlm.py                 # Unified VLM class (OpenAI wrapper)
 ├── .env-example           # Environment variables template
 ├── requirements.txt       # Python dependencies
-├── test/
-│   ├── test_gemini.py    # Test script for Gemini
-│   └── test_ollama.py    # Test script for Ollama
-└── README.md
+├── README.md              # This file
+└── test/
+    └── test_vlm.py        # Manual VLM testing script
 ```
 
-## Architecture
+## System Prompt & Actions
 
-The server uses an abstract `VLM` base class that both `GeminiClient` and `OllamaClient` inherit from. This allows:
-- **Easy provider switching**: Change `VLM_PROVIDER` in config or .env
-- **Consistent interface**: Both providers implement `analyze_frame()`
-- **Factory pattern**: `VLM.create()` instantiates the correct provider
-
-## Configuration
-
-### config.py
-- `VLM_PROVIDER`: Default VLM provider ("ollama" or "gemini")
-- `PORT`: Server listening port
-- `GEMINI_MODEL_NAME`: Gemini model identifier
-- `OLLAMA_MODEL_NAME`: Ollama model name
-- `OLLAMA_URL`: Ollama API endpoint
-- `SYSTEM_PROMPT`: Instructions for the VLM
-- `DEFAULT_COMMAND`: Command to send on successful frame processing
-- `STOP_COMMAND`: Command to send on error
-
-### .env (optional overrides)
-- `VLM_PROVIDER`: Override the default provider
-- `GOOGLE_API_KEY`: Required for Gemini
+The behavior of the robot is defined in `config.py` under `SYSTEM_PROMPT`. The VLM is instructed to output JSON commands for:
+- **Movement**: `forward`, `backward`, `stop`.
+- **Camera**: `look_left`, `look_right`, `look_up`, `look_down`.
+- **Speech**: `speak`, `ask`.
 
 ## Network Setup
 
 To connect from Raspberry Pi:
-1. Find your laptop's IP address:
+1. Find your laptops IP address:
    - Linux/Mac: `ip addr` or `ifconfig`
    - Windows: `ipconfig`
-2. Set this IP in the client's `.env` file as `SERVER_IP`
-3. Ensure firewall allows connections on port 5555
-
-## Switching VLM Providers
-
-### Method 1: Edit config.py (default)
-```python
-VLM_PROVIDER = "gemini"  # or "ollama"
-```
-
-### Method 2: Override with .env
-```env
-VLM_PROVIDER=gemini
-```
-
-The server will automatically use the specified provider on startup.
-
+2. Set this IP in the **Clients** `.env` file as `SERVER_IP`.
+3. Ensure your firewall allows inbound connections on port 5555.
