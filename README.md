@@ -1,48 +1,92 @@
-## Goal-Oriented Robotic Planning and Navigation in Indoor Environments Using Local Vision Language Models
+# Goal-Oriented Robotic Planning and Navigation with Vision Language Models
 
-This repository contains the source code and documentation for a final year BSc Computer Science dissertation project at Coventry University. The project explores **Goal-Oriented Robotic Planning** by integrating Vision Language Models (VLMs) for high-level reasoning and navigation. The system is designed to navigate indoor environments using real-time obstacle avoidance and strategic planning, leveraging both local VLMs (via Ollama) and cloud-based models (Gemini) for comparative analysis and robust decision-making.
+A robotic navigation framework that integrates **Vision Language Models (VLMs)** for high-level reasoning, object detection, and path planning. The system enables a **Raspberry Pi-based robot (PiCar-X)** to understand its environment visually and execute text-based natural language instructions (e.g., "Find the yellow rubber duck") using models like Google Gemini or Ollama.
 
-### Project Overview
+## Key Features
 
-The system utilizes a **SunFounder PiCar-X** as the physical agent, controlled by a Raspberry Pi 4. To overcome the computational limitations of the Pi, high-level visual processing and strategic logic are offloaded to a local inference server (laptop). The server processes panoramic visual data and generates actionable navigation commands, which are sent back to the robot.
+- **Brain-Client Architecture**:
+  - **Client (PiCar-X)**: Lightweight Python agent handling motor control, camera streaming, and sensor readings.
+  - **Server (Laptop/PC)**: High-performance ZeroMQ server running state-of-the-art VLMs for decision making.
 
-#### Key Features
+- **Unified VLM backend**: 
+  - Supports **Google Gemini 3 Pro** (Cloud) for high-speed, accurate reasoning.
+  - Supports **Ollama** (Local) for offline, privacy-focused inference (e.g., LLaVA).
+  - Uses OpenAI-compatible API format for easy model swapping.
 
-- **Hybrid VLM Integration**: Supports switching between local execution (Ollama) and cloud-based inference (Google Gemini) for flexible performance trade-offs.
-- **Panoramic Environmental Understanding**: The robot captures and stitches multiple images to form a comprehensive view of its surroundings before making decisions.
-- **Client-Server Architecture**: Uses ZeroMQ (ZMQ) for low-latency communication between the Raspberry Pi (Client) and the Inference Server.
-- **Goal-Oriented Navigation**: The VLM processes visual context to plan paths towards specific goals while avoiding obstacles.
-- **Hardware Abstraction**: modular design separates low-level robot control (motors, servos) from high-level logic.
+- **Rich Interaction**:
+  - **Movement**: Navigate with obstacle avoidance and dynamic steering.
+  - **Vision**: Scan the room by moving the camera head (independent of chassis).
+  - **Speech**: Speak to users or ask questions using Text-to-Speech (TTS). (Instructions are currently typed text).
 
-#### Hardware Stack
+## Hardware Stack
 
-**Robot Agent:**
-- **Chassis**: SunFounder PiCar-X
-- **Controller**: Raspberry Pi 4 Model B (4GB RAM)
-- **Hat**: Robot HAT v4
-- **Camera**: Standard Pi Camera Module
-- **OS**: Raspberry Pi OS (Legacy)
+- **Robot**: SunFounder PiCar-X (Raspberry Pi 4 Model B)
+- **Host Machine**: Any PC/Laptop (Windows/Linux/Mac) capable of running Python 3.8+
+- **Camera**: Standard Pi Camera Module or USB Webcam
 
-**Inference Server:**
-- **OS**: Ubuntu 22.04 LTS (or similar)
-- **CPU**: AMD Ryzen 3 (or equivalent)
-- **GPU**: AMD Radeon Graphics (Optional, for local inference acceleration)
-- **VLM Backend**: Ollama (Local) / Google Gemini API (Cloud)
+## Project Structure
 
-### Software Architecture
+```bash
+VLMxRobot/
+├── client-pi/          # Code running on the Robot (Raspberry Pi)
+│   ├── actions.py      # Motor & Servo control logic
+│   ├── camera.py       # Camera streaming
+│   ├── client.py       # Main ZMQ client loop
+│   └── ...
+├── server-VLM/         # Code running on the Host (Brain)
+│   ├── server.py       # Main ZMQ server & VLM handler
+│   ├── vlm.py          # Unified VLM interface
+│   ├── config.py       # System prompts & configurations
+│   └── ...
+└── utils/              # Shared utilities (if any)
+```
 
-The project consists of two main components:
-1.  **Client (Raspberry Pi)**: Handles hardware interfacing, image capture, panoramic stitching, and executing movement commands.
-2.  **Server (Laptop/PC)**: Hosts the VLM, processes incoming image data, and generates navigation instructions.
+## Quick Start
 
-Communication is handled via TCP sockets (ZeroMQ).
+### 1. Server Setup (The Brain)
+Run this on your powerful laptop/PC.
 
-### Requirements
+```bash
+cd server-VLM
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
-See `client-pi/requirements.txt` and `server-VLM/requirements.txt` for specific Python dependencies.
+# Configure API Keys
+cp .env-example .env
+# Edit .env to add your GOOGLE_API_KEY or configure Ollama
 
-Key Libraries:
-- `opencv-python`: Image processing and stitching.
-- `pyzmq`: Network communication.
-- `ollama` / `google-genai`: Vision Language Model interfaces.
-- `picarx`: SunFounder robot control library.
+# Start the Server
+python server.py
+```
+
+### 2. Client Setup (The Robot)
+Run this on the Raspberry Pi.
+
+```bash
+cd client-pi
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Configure Connection
+cp .env-example .env
+# Edit .env and set SERVER_IP to your laptop\s IP address
+
+# Start the Robot
+python client.py
+```
+
+## How It Works
+
+1. **Capture**: The robot captures a simplified image of its view.
+2. **Transmit**: The image is sent over Wi-Fi (ZMQ) to the server.
+3. **Analyze**: The VLM server analyzes the image against the user\s instruction (e.g., "Find the yellow rubber duck").
+4. **Plan**: The VLM generates a structured JSON command (e.g., `{ "action": "look_left", "angle": 30 }`).
+5. **Execute**: The robot receives the JSON and executes the physical movement.
+6. **Loop**: The cycle repeats until the task is marked "completed".
+
+## 📚 Documentation
+
+- [Server Documentation](server-VLM/README.md)
+- [Client Documentation](client-pi/README.md)

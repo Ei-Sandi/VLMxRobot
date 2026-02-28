@@ -1,27 +1,23 @@
-import os
 import cv2
 import zmq
 import numpy as np
-from dotenv import load_dotenv
-from config import PORT, STOP_COMMAND, OLLAMA_MODEL_NAME, OLLAMA_URL, GEMINI_MODEL_NAME, SYSTEM_PROMPT, VLM_PROVIDER
+from config import PORT, STOP_COMMAND, VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_NAME, SYSTEM_PROMPT
 from vlm import VLM
 
 def main():
-    load_dotenv()
-    
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind(f"tcp://*:{PORT}")
 
-    provider = os.getenv("VLM_PROVIDER", VLM_PROVIDER).lower()
+    vlm = VLM(
+        api_key=VLM_API_KEY,
+        base_url=VLM_BASE_URL,
+        model_name=VLM_MODEL_NAME,
+        system_prompt=SYSTEM_PROMPT
+    )
     
-    if provider == "gemini":
-        google_api_key = os.getenv("GOOGLE_API_KEY")
-        vlm = VLM.create("gemini", GEMINI_MODEL_NAME, SYSTEM_PROMPT, google_api_key=google_api_key)
-    else:
-        vlm = VLM.create("ollama", OLLAMA_MODEL_NAME, SYSTEM_PROMPT, ollama_url=OLLAMA_URL)
-    
-    print(f"Server listening on port {PORT} using {provider.upper()} provider")
+    print(f"Server listening on port {PORT}")
+    print(f"Using VLM Model: {VLM_MODEL_NAME} at {VLM_BASE_URL}")
     print("Press 'q' in the video window to stop.")
 
     try:
