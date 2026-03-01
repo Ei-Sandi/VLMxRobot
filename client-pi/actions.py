@@ -30,8 +30,8 @@ class Actions:
         return "capture"
 
     @staticmethod
-    def look_right(car, angle=-35, duration=1):
-        car.cam_pan_servo_calibrate(angle)
+    def look_right(car, angle=35, duration=1):
+        car.cam_pan_servo_calibrate(-angle)
         time.sleep(duration)
         return "capture"
 
@@ -42,8 +42,8 @@ class Actions:
         return "capture"
 
     @staticmethod
-    def look_down(car, angle=-35, duration=1):
-        car.cam_tilt_servo_calibrate(angle)
+    def look_down(car, angle=35, duration=1):
+        car.cam_tilt_servo_calibrate(-angle)
         time.sleep(duration)
         return "capture"
 

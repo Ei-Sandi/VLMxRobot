@@ -30,6 +30,11 @@ def main():
     
     speaker = Speaker() 
     px = Picarx()
+
+    print("Resetting servos to 0 degrees...")
+    px.reset()
+    time.sleep(0.5)
+
     executor = Executor(px, speaker)
 
     context = zmq.Context()
@@ -127,6 +132,7 @@ def main():
     finally:
         camera.clean_up()
         socket.close()
+        px.close() 
 
 if __name__ == "__main__":
     main()
