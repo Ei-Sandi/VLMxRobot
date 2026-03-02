@@ -80,6 +80,7 @@ def main():
                     if command:
                         command_result = executor.execute(command) 
                         print(f"Executed Command: {command}")
+                        time.sleep(1)
 
                         if isinstance(command, dict) and command.get("action") == "ask":
                             prompt = input("Answer: ") 
