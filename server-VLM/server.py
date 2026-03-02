@@ -2,7 +2,7 @@ import cv2
 import zmq
 import numpy as np
 from config import PORT, STOP_COMMAND, VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_NAME, SYSTEM_PROMPT
-from vlm import VLM
+from vlm_cw import VLM
 
 def main():
     context = zmq.Context()

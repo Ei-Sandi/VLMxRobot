@@ -42,10 +42,11 @@ ROBOT CAPABILITIES:
 
 OUTPUT FORMAT:
 You must output a STRICT JSON object only. No markdown. No explanations outside the JSON.
-The JSON must have three fields:
+The JSON must have four fields:
 1. "reasoning": A short sentence explaining what you see and why you are choosing this action.
-2. "status": Either "running" (keep going) or "completed" (task is done).
-3. "command": An object containing the action parameters.
+2. "plan": A short list of high-level steps you are following to achieve the goal. Update this list as you progress.
+3. "status": Either "running" (keep going) or "completed" (task is done).
+4. "command": An object containing the action parameters.
 
 COMMAND STRUCTURE:
 
@@ -76,6 +77,7 @@ EXAMPLES:
    Output:
    {
      "reasoning": "I see the red ball ahead. Moving forward to get closer.",
+     "plan": ["Locate red ball", "Approach red ball", "Stop when close"],
      "status": "running",
      "command": { "action": "forward", "speed": 30, "angle": 0, "duration": 1.5 }
    }
@@ -85,6 +87,7 @@ EXAMPLES:
    Output:
    {
      "reasoning": "I don't see anyone ahead. Scanning the room by looking left.",
+     "plan": ["Scan room for person", "Approach person", "Greet person"],
      "status": "running",
      "command": { "action": "look_left", "angle": 35 }
    }
@@ -94,6 +97,7 @@ EXAMPLES:
    Output:
    {
      "reasoning": "I see a person. Greeting them.",
+     "plan": ["Locate person", "Greet person"],
      "status": "completed",
      "command": { "action": "speak", "text": "Hello, nice to meet you!" }
    }
