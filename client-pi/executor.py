@@ -2,9 +2,10 @@ from picarx import Picarx
 from actions import actions_dict
 
 class Executor:
-    def __init__(self, car: Picarx, speaker=None) -> None:
+    def __init__(self, car: Picarx, speaker=None, check_safeguard=None) -> None:
         self.car = car
         self.speaker = speaker
+        self.check_safeguard = check_safeguard
 
     def execute(self, action_item: dict) -> str:
         """
@@ -29,9 +30,9 @@ class Executor:
                         print("Speaker not initialized")
                 elif name in ["look_left", "look_right", "look_up", "look_down"]:
                     # These return "capture" signal
-                    return actions_dict[name](self.car, **kwargs)
+                    return actions_dict[name](self.car, check_safeguard=self.check_safeguard, **kwargs)
                 else:
-                    actions_dict[name](self.car, **kwargs)
+                    return actions_dict[name](self.car, check_safeguard=self.check_safeguard, **kwargs)
             except Exception as e:
                 print(f"Error executing action {name}: {e}")
         else:

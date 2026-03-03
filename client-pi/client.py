@@ -35,7 +35,18 @@ def main():
     px.reset()
     time.sleep(0.5)
 
-    executor = Executor(px, speaker)
+    def check_safeguard(car=None):
+        if car is None: return False
+        try:
+            distance = round(car.ultrasonic.read(), 2)
+            if distance <= 10:
+                print(f"Safeguard triggered! Distance: {distance}")
+                return True
+        except Exception as e:
+            print(f"Safeguard check failed: {e}")
+        return False
+
+    executor = Executor(px, speaker, check_safeguard=check_safeguard)
 
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
@@ -44,10 +55,12 @@ def main():
     socket.connect(f"tcp://{SERVER_IP}:{SERVER_PORT}")
     print(f"Connected to {SERVER_IP}:{SERVER_PORT}")
 
+    prompt = None
     try:
         while True:
             try:
-                prompt = input("Enter instruction: ") 
+                if not prompt:
+                    prompt = input("Enter instruction: ") 
 
                 speaker.speak(prompt)
                     
@@ -86,6 +99,10 @@ def main():
                             prompt = input("Answer: ") 
                             continue
 
+                        if command_result == "safeguard":
+                            prompt = "Safeguard triggered! There is an object in front of you in 10 cm apart."
+                            continue
+
                         if command_result == "capture":
                              # We use a loop here to handle chained look commands (Look Left -> Look Right -> Look Up...)
                             while command_result == "capture":
@@ -119,6 +136,10 @@ def main():
                                         prompt = input("Answer: ")
                                 else:
                                     command_result = None
+                        
+                        if command_result == "safeguard":
+                            prompt = "Safeguard triggered! Distance >= 20."
+                            continue
 
                     response_time = end_time - start_time
                     print(f"Response time: {response_time:.3f} seconds")
