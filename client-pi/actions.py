@@ -26,17 +26,14 @@ class Actions:
 
     @staticmethod
     def move_backward(car, speed=5, angle=0, duration=1, check_safeguard=None):
-        car.set_dir_servo_angle(angle)
+        car.set_dir_servo_angle(-angle)
         car.backward(speed)
         
-        triggered = Actions.wait_for_duration(duration, car, check_safeguard)
+        time.sleep(duration)
         
         car.stop()
         car.set_dir_servo_angle(0)
 
-        if triggered:
-            return "safeguard"
-    
     @staticmethod
     def stop(car, speed=0, angle=0, duration=0, check_safeguard=None):
         car.stop()

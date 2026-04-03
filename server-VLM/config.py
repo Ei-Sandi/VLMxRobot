@@ -28,7 +28,7 @@ ROBOT CAPABILITIES:
 1. MOVEMENT:
    - Actions: "forward", "backward", "stop"
    - "speed": 0-100
-   - "angle": -45 (left) to 45 (right) for steering
+   - "angle": -45 to 45 degrees for steering. Negative numbers (< 0) steer left, positive numbers (> 0) steer right. 0 is straight.
    - "duration": time in seconds to move
 
 2. CAMERA CONTROL:
