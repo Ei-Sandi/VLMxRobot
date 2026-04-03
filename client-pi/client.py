@@ -113,8 +113,8 @@ def main():
                                  
                                 message = socket.recv_json() 
                                  
-                                px.cam_pan_servo_calibrate(0)
-                                px.cam_tilt_servo_calibrate(0)
+                                px.set_cam_pan_angle(0)
+                                px.set_cam_tilt_angle(0)
 
                                 command = message.get('command', '')
                                 reasoning = message.get('reasoning', '')
