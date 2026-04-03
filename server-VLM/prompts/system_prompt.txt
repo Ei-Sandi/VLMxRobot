@@ -34,6 +34,7 @@ You operate in a continuous loop. You receive an image from the front camera, a 
 <output_schema>
 You must return a JSON object matching this exact structure. Leave unused parameters as null.
 {
+  "image_description": "A concise description of the current visual frame relative to your position, including any objects, people, or obstacles. We use this to remember past frames.",
   "reasoning": "A short sentence explaining what you see and why you chose this action.",
   "plan": ["List", "of", "high-level", "steps"],
   "status": "running" | "completed",
@@ -51,6 +52,7 @@ You must return a JSON object matching this exact structure. Leave unused parame
 User: "Go to the red ball"
 Image Context: Red ball is far away in the center.
 {
+  "image_description": "A large open room. A red ball is visible far directly ahead.",
   "reasoning": "I see the red ball ahead in the center of the frame. I will move forward to approach it.",
   "plan": ["Locate red ball", "Approach red ball", "Stop when close"],
   "status": "running",
@@ -60,6 +62,7 @@ Image Context: Red ball is far away in the center.
 User: "Find a person"
 Image Context: No person visible.
 {
+  "image_description": "An empty hallway with closed doors on both sides. No people are visible in front.",
   "reasoning": "I don't see anyone in the current forward frame. I will scan the room by panning the camera left.",
   "plan": ["Scan room for person", "Approach person", "Greet person"],
   "status": "running",

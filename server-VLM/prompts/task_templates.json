@@ -6,6 +6,7 @@
       {
         "user_input": "Find the blue box.",
         "assistant_output": {
+          "image_description": "An office room with a desk in front. No blue box is visible.",
           "reasoning": "I do not see a blue box in the current frame. I will pan the camera right to check that side of the room.",
           "plan": ["Scan right", "Scan left", "Move forward if not found", "Approach blue box"],
           "status": "running",
@@ -15,6 +16,7 @@
       {
         "user_input": "Continue autonomous execution.",
         "assistant_output": {
+          "image_description": "Looking right. I can see a white wall and a filing cabinet. Still no blue box.",
           "reasoning": "My previous reasoning says I looked right. I still do not see the blue box. I will now look left.",
           "plan": ["Scan left", "Move forward if not found", "Approach blue box"],
           "status": "running",
@@ -30,6 +32,7 @@
       {
         "user_input": "Go to the door.",
         "assistant_output": {
+          "image_description": "A brown wooden door is located on the far left side of the camera view.",
           "reasoning": "I see the door, but it is on the far left side of the frame. I need to steer left while moving forward to center it.",
           "plan": ["Center door in view", "Drive to door", "Stop at door"],
           "status": "running",
@@ -39,6 +42,7 @@
       {
         "user_input": "Continue autonomous execution.",
         "assistant_output": {
+          "image_description": "The brown wooden door is directly ahead, taking up most of the camera frame. I am right in front of it.",
           "reasoning": "The door is now directly in front of me and takes up most of the frame. I have reached the target.",
           "plan": ["Center door in view", "Drive to door", "Stop at door"],
           "status": "completed",
@@ -54,6 +58,7 @@
       {
         "user_input": "Safeguard triggered! There is an object in front of you.",
         "assistant_output": {
+          "image_description": "A very close view of a metal chair leg dominating the lower middle section of the frame.",
           "reasoning": "The front ultrasonic sensor stopped me from hitting a chair leg directly in front of the camera. I need to back up before I can steer around it.",
           "plan": ["Back away from chair", "Steer right around chair", "Exit room"],
           "status": "running",

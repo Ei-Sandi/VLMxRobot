@@ -28,17 +28,12 @@ class ContextManager:
     def add_user_message(self, prompt: str, frame: np.ndarray = None):
         """
         Formats the user input and the current image.
-        If the prompt is empty, injects the autonomous continuation prompt.
         """
-        if not prompt or prompt.strip() == "":
-            instruction_text = "System Note: No new user instruction. Continue autonomous execution based on your previous reasoning and goal."
-        else:
-            instruction_text = f"User Instruction: {prompt}"
-
         content = []
         
-        # Always attach the text instruction
-        content.append({"type": "text", "text": instruction_text})
+        # Attach the text instruction if provided
+        if prompt and prompt.strip():
+            content.append({"type": "text", "text": f"User Instruction: {prompt}"})
         
         # Attach the image if provided
         if frame is not None:
@@ -69,7 +64,6 @@ class ContextManager:
     def _prune_history(self):
         """
         Keeps history under the max_history limit.
-        CRITICAL VLA OPTIMIZATION: 
         Replaces actual image payloads in older turns with text placeholders 
         to drastically reduce latency and token costs.
         """
@@ -83,9 +77,9 @@ class ContextManager:
             if msg["role"] == "user" and isinstance(msg["content"], list):
                 for item in msg["content"]:
                     if item.get("type") == "image_url":
-                        # Replace the heavy base64 string with a text note
+                        # Replace the heavy base64 string with a short text note to save tokens
                         item["type"] = "text"
-                        item["text"] = "[Image from this turn removed to save memory. Rely on previous reasoning.]"
+                        item["text"] = "[Image redacted]"
                         # Remove the image_url key entirely
                         if "image_url" in item:
                             del item["image_url"]

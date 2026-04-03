@@ -1,6 +1,7 @@
 import cv2
 import logging
-from config import PORT, STOP_COMMAND, VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_NAME, SYSTEM_PROMPT, get_task_guidance
+from config import PORT, STOP_COMMAND, VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_NAME, SYSTEM_PROMPT
+from utils import get_task_guidance
 from core.network.zmq_handler import ZMQServer
 from core.models.vlm_wrapper import VLM
 from core.memory.context import ContextManager
@@ -43,7 +44,10 @@ def main():
                 server.send_response(response)
                 continue
 
-            cv2.imshow("PiCar-X VLM Stream", frame)
+            # Resize frame to 336x224 pixels before showing and sending to VLM
+            resized_frame = cv2.resize(frame, (336, 224))
+
+            cv2.imshow("PiCar-X VLM Stream", resized_frame)
             
             # Local debug view escape hatch
             key = cv2.waitKey(1) & 0xFF
@@ -52,8 +56,8 @@ def main():
             
             try:
                 # 2. Combine the new prompt and frame with our conversation history
-                context_manager.add_user_message(prompt, frame)
-                task_guidance = get_task_guidance(prompt)
+                context_manager.add_user_message(prompt, resized_frame)
+                task_guidance = get_task_guidance(prompt, vlm)
                 messages = context_manager.get_messages(SYSTEM_PROMPT, task_guidance=task_guidance)
                 
                 # 3. Request inference
@@ -61,9 +65,13 @@ def main():
                 
                 parsed_command = result["parsed_command"]
                 raw_text = result["raw_text"]
+                image_desc = parsed_command.get("image_description", "Description generation failed.")
                 
                 # 4. Save the exact raw response to history to fulfill few-shot/memory loop
                 context_manager.add_assistant_message(raw_text)
+                
+                # Pop out the large description so we don't send it to the client side over ZeroMQ!
+                parsed_command.pop("image_description", None)
                 
                 print(parsed_command)
                 response = parsed_command
