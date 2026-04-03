@@ -1,33 +1,36 @@
 import cv2
-import zmq
-import numpy as np
-from config import PORT, STOP_COMMAND, VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_NAME, SYSTEM_PROMPT
-from vlm_cw import VLM
+import logging
+from config import PORT, STOP_COMMAND, VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_NAME, SYSTEM_PROMPT, get_task_guidance
+from core.network.zmq_handler import ZMQServer
+from core.models.vlm_wrapper import VLM
+from core.memory.context import ContextManager
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def main():
-    context = zmq.Context()
-    socket = context.socket(zmq.REP)
-    socket.bind(f"tcp://*:{PORT}")
+    # Initialize Network
+    server = ZMQServer(port=PORT)
+    server.start()
 
+    # Initialize VLM
     vlm = VLM(
         api_key=VLM_API_KEY,
         base_url=VLM_BASE_URL,
-        model_name=VLM_MODEL_NAME,
-        system_prompt=SYSTEM_PROMPT
+        model_name=VLM_MODEL_NAME
     )
     
-    print(f"Server listening on port {PORT}")
+    # Initialize Memory
+    context_manager = ContextManager(max_history_turns=30)
+    
     print(f"Using VLM Model: {VLM_MODEL_NAME} at {VLM_BASE_URL}")
     print("Press 'q' in the video window to stop.")
 
     try:
         while True:
-            parts = socket.recv_multipart()
-            prompt_bytes, buffer = parts
-            prompt = prompt_bytes.decode('utf-8')
-
-            nparr = np.frombuffer(buffer, np.uint8)
-            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            # 1. Block and wait for Robot Client to send image + prompt
+            prompt, frame = server.receive_frame()
 
             response = {
                 "reasoning": "Frame not received",
@@ -37,31 +40,51 @@ def main():
             
             if frame is None:
                 print("Frame not received! Stopping robot.")
-            else: 
-                cv2.imshow("PiCar-X VLM Stream", frame)
-                
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord('q'):
-                    break
-                
-                try:
-                    result = vlm.analyze_frame(frame, prompt=prompt)
-                    print(result)
-                    response = result
-                except Exception as e:
-                    print(f"Error analyzing frame: {e}")
-                    response = {
-                        "reasoning": f"Error: {str(e)}",
-                        "status": "completed",
-                        "command": STOP_COMMAND
-                    }
+                server.send_response(response)
+                continue
+
+            cv2.imshow("PiCar-X VLM Stream", frame)
             
-            socket.send_json(response)
+            # Local debug view escape hatch
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                break
+            
+            try:
+                # 2. Combine the new prompt and frame with our conversation history
+                context_manager.add_user_message(prompt, frame)
+                task_guidance = get_task_guidance(prompt)
+                messages = context_manager.get_messages(SYSTEM_PROMPT, task_guidance=task_guidance)
+                
+                # 3. Request inference
+                result = vlm.generate(messages)
+                
+                parsed_command = result["parsed_command"]
+                raw_text = result["raw_text"]
+                
+                # 4. Save the exact raw response to history to fulfill few-shot/memory loop
+                context_manager.add_assistant_message(raw_text)
+                
+                print(parsed_command)
+                response = parsed_command
+                
+            except Exception as e:
+                logger.error(f"Error analyzing frame: {e}")
+                # Rollback memory so we don't end up out-of-sync
+                context_manager.remove_last_user_message()
+                response = {
+                    "reasoning": f"System error during analysis: {str(e)}",
+                    "status": "completed",
+                    "command": STOP_COMMAND
+                }
+            
+            # 5. Send the safely parsed dictionary back to the robot execution pipeline
+            server.send_response(response)
                 
     except KeyboardInterrupt:
         print("\nShutting down server...")
     finally:
-        socket.close()
+        server.close()
         cv2.destroyAllWindows()
         print("Server stopped.")
 

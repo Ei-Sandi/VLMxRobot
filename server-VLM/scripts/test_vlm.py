@@ -2,18 +2,17 @@ import cv2
 import sys
 import os
 import json
-import base64
-import numpy as np
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from vlm import VLM
 try:
-    from config import VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_NAME, SYSTEM_PROMPT
+    from config import VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_NAME, SYSTEM_PROMPT, get_task_guidance
+    from core.models.vlm_wrapper import VLM
+    from core.memory.context import ContextManager
 except ImportError:
-    print("Could not import config.py inside the parent directory. Make sure config.py exists.")
+    print("Could not import project modules. Run this script from within server-VLM.")
     sys.exit(1)
 
 def test_vlm_manual(image_path, user_prompt):
@@ -35,9 +34,12 @@ def test_vlm_manual(image_path, user_prompt):
     vlm_client = VLM(
         api_key=VLM_API_KEY, 
         base_url=VLM_BASE_URL, 
-        model_name=VLM_MODEL_NAME, 
-        system_prompt=SYSTEM_PROMPT
+        model_name=VLM_MODEL_NAME
     )
+    context = ContextManager(max_history_turns=1)
+    context.add_user_message(user_prompt, frame)
+    task_guidance = get_task_guidance(user_prompt)
+    messages = context.get_messages(SYSTEM_PROMPT, task_guidance=task_guidance)
 
     print("-" * 50)
     print(f"User Prompt: '{user_prompt}'")
@@ -45,9 +47,12 @@ def test_vlm_manual(image_path, user_prompt):
     print("-" * 50)
 
     try:
-        result = vlm_client.analyze_frame(frame, user_prompt)
+        result = vlm_client.generate(messages)
         print("\n--- VLM Response ---")
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result["parsed_command"], indent=2))
+        if result.get("raw_text"):
+            print("\n--- Raw Model JSON ---")
+            print(result["raw_text"])
         print("--------------------")
     except Exception as e:
         print(f"\nError during analysis: {e}")

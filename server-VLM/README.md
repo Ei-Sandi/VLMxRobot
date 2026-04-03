@@ -10,6 +10,8 @@ This server acts as the brain of the robot. It receives JPEG-encoded images from
 
 - **Unified VLM Interface**: Uses the `openai` python library to connect to any OpenAI-compatible VLM provider (Ollama, Gemini, etc.).
 - **ZeroMQ Streaming**: Low-latency image streaming and command response.
+- **Conversation Memory**: Keeps recent text/image history while pruning old image payloads.
+- **Safe Command Parsing**: Pydantic schema validation with emergency fallback stop.
 - **Configurable Control**: Easy switching between models via environment variables.
 - **Manual Testing**: Script to test VLM responses with static images.
 
@@ -36,14 +38,14 @@ cp .env-example .env
 
 3. Configure your `.env` file for your chosen provider:
 
-   **Option A: Gemini (Default)**
+   **Option A: Gemini (Default, cloud)**
    ```env
    VLM_API_KEY="your-google-api-key-here"
    VLM_BASE_URL="https://generativelanguage.googleapis.com/v1beta/openai/"
    VLM_MODEL_NAME="gemini-1.5-flash"
    ```
 
-   **Option B: Ollama (Local)**
+   **Option B: Ollama (local)**
    ```env
    VLM_API_KEY="ollama"
    VLM_BASE_URL="http://localhost:11434/v1"
@@ -70,36 +72,54 @@ The server will:
 
 ### Test VLM Manually
 
-You can test the VLM\s response to a static image without running the full robot loop:
+You can test the VLM response to a static image without running the full robot loop:
 
 ```bash
 # Basic usage (defaults to generic prompt)
-./venv/bin/python3 test/test_vlm.py path/to/image.jpg
+./venv/bin/python3 scripts/test_vlm.py path/to/image.jpg
 
 # Custom prompt
-./venv/bin/python3 test/test_vlm.py path/to/image.jpg "Is there a clear path forward?"
+./venv/bin/python3 scripts/test_vlm.py path/to/image.jpg "Is there a clear path forward?"
 ```
 
 ## Project Structure
 
 ```
 server-VLM/
-├── server.py              # Main ZeroMQ server application
-├── config.py              # Configuration loading and System Prompt
-├── vlm.py                 # Unified VLM class (OpenAI wrapper)
+├── server.py              # Main runtime loop (network + memory + model)
+├── config.py              # Env config + loads prompts/system_prompt.txt
 ├── .env-example           # Environment variables template
 ├── requirements.txt       # Python dependencies
 ├── README.md              # This file
-└── test/
-    └── test_vlm.py        # Manual VLM testing script
+├── core/
+│   ├── network/zmq_handler.py      # ZeroMQ REQ/REP receive/send abstraction
+│   ├── memory/context.py           # Message history + image pruning
+│   ├── models/vlm_wrapper.py       # OpenAI-compatible VLM wrapper
+│   └── actions/parser.py           # Strict JSON schema parser/fallback
+├── prompts/
+│   ├── system_prompt.txt           # Canonical robot behavior prompt
+│   └── task_templates.json         # Task templates/few-shot references (actively injected)
+└── scripts/
+   ├── test_vlm.py                 # Manual static-image VLM test
+   └── simple_image_server.py      # Debug REQ/REP image receiver
 ```
 
 ## System Prompt & Actions
 
-The behavior of the robot is defined in `config.py` under `SYSTEM_PROMPT`. The VLM is instructed to output JSON commands for:
+The behavior prompt is maintained in `prompts/system_prompt.txt` and loaded by `config.py` into `SYSTEM_PROMPT` at startup. The VLM is instructed to output JSON commands for:
 - **Movement**: `forward`, `backward`, `stop`.
 - **Camera**: `look_left`, `look_right`, `look_up`, `look_down`.
 - **Speech**: `speak`, `ask`.
+
+## Runtime Workflow
+
+1. Client sends multipart ZeroMQ message: `(prompt, jpg_frame_bytes)`.
+2. `server.py` receives frame and appends user turn into context memory.
+3. `config.py` selects task guidance from `task_templates.json` based on prompt keywords.
+4. `context.py` builds model messages with base system prompt + selected task guidance + conversation history.
+5. `vlm_wrapper.py` calls the configured OpenAI-compatible endpoint.
+6. `parser.py` validates model JSON into strict action schema.
+7. Safe parsed command is returned to the robot over ZeroMQ.
 
 ## Network Setup
 
