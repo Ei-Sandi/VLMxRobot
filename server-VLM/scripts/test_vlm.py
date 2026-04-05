@@ -9,7 +9,6 @@ sys.path.append(parent_dir)
 
 try:
     from config import VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_NAME, SYSTEM_PROMPT
-    from utils import get_task_guidance
     from core.models.vlm_wrapper import VLM
     from core.memory.context import ContextManager
 except ImportError as e:
@@ -42,8 +41,7 @@ def test_vlm_manual(image_path, user_prompt):
     )
     context = ContextManager(max_history_turns=1)
     context.add_user_message(user_prompt, frame)
-    task_guidance = get_task_guidance(user_prompt)
-    messages = context.get_messages(SYSTEM_PROMPT, task_guidance=task_guidance)
+    messages = context.get_messages(SYSTEM_PROMPT)
 
     print("-" * 50)
     print(f"User Prompt: '{user_prompt}'")

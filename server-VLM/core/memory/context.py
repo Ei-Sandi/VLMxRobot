@@ -84,7 +84,7 @@ class ContextManager:
                         if "image_url" in item:
                             del item["image_url"]
 
-    def get_messages(self, system_prompt: str, task_guidance: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_messages(self, system_prompt: str) -> List[Dict[str, Any]]:
         """
         Compiles the system prompt and the pruned history into the exact format 
         required by the OpenAI API.
@@ -92,18 +92,16 @@ class ContextManager:
         messages = [
             {"role": "system", "content": system_prompt}
         ]
-        if task_guidance:
-            messages.append({"role": "system", "content": task_guidance})
         # Append the ongoing history
         messages.extend(self.history)
         return messages
 
-    def get_messages_for_debug(self, system_prompt: str, task_guidance: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_messages_for_debug(self, system_prompt: str) -> List[Dict[str, Any]]:
         """
         Returns a debug-safe view of the message context where image payloads are redacted.
         Useful for terminal logging without printing base64 image content.
         """
-        messages = self.get_messages(system_prompt, task_guidance=task_guidance)
+        messages = self.get_messages(system_prompt)
         redacted_messages: List[Dict[str, Any]] = []
 
         for msg in messages:
