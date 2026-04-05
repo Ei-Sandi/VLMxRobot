@@ -41,13 +41,13 @@ class Actions:
 
     @staticmethod
     def look_left(car, angle=35, duration=1, check_safeguard=None):
-        car.set_cam_pan_angle(angle)
+        car.set_cam_pan_angle(-angle)
         time.sleep(duration)
         return "capture"
 
     @staticmethod
     def look_right(car, angle=35, duration=1, check_safeguard=None):
-        car.set_cam_pan_angle(-angle)
+        car.set_cam_pan_angle(angle)
         time.sleep(duration)
         return "capture"
 
