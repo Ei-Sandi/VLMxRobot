@@ -8,11 +8,12 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 try:
-    from config import VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_NAME, SYSTEM_PROMPT, get_task_guidance
+    from config import VLM_API_KEY, VLM_BASE_URL, VLM_MODEL_NAME, SYSTEM_PROMPT
+    from utils import get_task_guidance
     from core.models.vlm_wrapper import VLM
     from core.memory.context import ContextManager
-except ImportError:
-    print("Could not import project modules. Run this script from within server-VLM.")
+except ImportError as e:
+    print(f"Could not import project modules. Error: {e}")
     sys.exit(1)
 
 def test_vlm_manual(image_path, user_prompt):
@@ -30,6 +31,9 @@ def test_vlm_manual(image_path, user_prompt):
     if frame is None:
         print("Error: Failed to load image. Check file format.")
         return
+
+    print("Resizing image to 336x224...")
+    frame = cv2.resize(frame, (336, 224))
 
     vlm_client = VLM(
         api_key=VLM_API_KEY, 
@@ -50,9 +54,23 @@ def test_vlm_manual(image_path, user_prompt):
         result = vlm_client.generate(messages)
         print("\n--- VLM Response ---")
         print(json.dumps(result["parsed_command"], indent=2))
-        if result.get("raw_text"):
-            print("\n--- Raw Model JSON ---")
-            print(result["raw_text"])
+        print("\n--- Raw Model JSON ---")
+        if "raw_text" in result:
+            print(repr(result["raw_text"]))
+        else:
+            print("No raw text returned.")
+
+        usage = result.get("usage")
+        if usage:
+            prompt_tokens = usage["prompt_tokens"]
+            output_tokens = usage["output_tokens"]
+            eval_seconds = usage["eval_seconds"]
+            tps = output_tokens / eval_seconds if eval_seconds > 0 else 0
+            print("-" * 20)
+            print(f"Prompt Tokens: {prompt_tokens}")
+            print(f"Output Tokens: {output_tokens}")
+            print(f"Speed: {tps:.2f} tokens per second")
+
         print("--------------------")
     except Exception as e:
         print(f"\nError during analysis: {e}")

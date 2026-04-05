@@ -67,11 +67,24 @@ def main():
                 raw_text = result["raw_text"]
                 image_desc = parsed_command.get("image_description", "Description generation failed.")
                 
+                usage = result.get("usage")
+                if usage:
+                    prompt_tokens = usage["prompt_tokens"]
+                    output_tokens = usage["output_tokens"]
+                    eval_seconds = usage["eval_seconds"]
+                    tps = output_tokens / eval_seconds if eval_seconds > 0 else 0
+                    print("-" * 20)
+                    print(f"Prompt Tokens: {prompt_tokens}")
+                    print(f"Output Tokens: {output_tokens}")
+                    print(f"Speed: {tps:.2f} tokens per second")
+                
                 # 4. Save the exact raw response to history to fulfill few-shot/memory loop
                 context_manager.add_assistant_message(raw_text)
                 
-                # Pop out the large description so we don't send it to the client side over ZeroMQ!
+                # Pop out large text fields so we don't send them to the client side over ZeroMQ!
                 parsed_command.pop("image_description", None)
+                parsed_command.pop("goal", None)
+                parsed_command.pop("plan", None)
                 
                 print(parsed_command)
                 response = parsed_command
