@@ -67,13 +67,14 @@ def main():
                     print(f"Speed: {tps:.2f} tokens per second")
                 
                 context_manager.add_assistant_message(raw_text)
+
+                print(parsed_command)
                 
                 # Remove large text fields so we don't send them to the client side over ZeroMQ
                 parsed_command.pop("image_description", None)
                 parsed_command.pop("goal", None)
                 parsed_command.pop("plan", None)
                 
-                print(parsed_command)
                 response = parsed_command
                 
             except Exception as e:
